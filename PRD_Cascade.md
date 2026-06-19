@@ -51,7 +51,7 @@ We deliberately keep v1 *calm*: no score chasing, no time pressure. The satisfac
 - Scoring, combos, timers, leaderboards (including local high scores). v1 has **no scoring system at all**.
 - Multiplayer / networked play.
 - Mobile-phone-as-camera (desktop webcam first; phone is a fast-follow).
-- Depth sensing / 3D occlusion.
+- True depth sensing / stereo 3D. (But see **Visual foreground occlusion** below — a 2D approximation is a planned late-stage polish, not a hard non-goal.)
 - Handwriting/OCR or any reading of note content.
 - Account systems, cloud save.
 - Green attractor and other expansion behaviors (deferred — see [§7](#7-the-core-mechanic-color-coded-behaviors)).
@@ -95,16 +95,18 @@ v1 ships with a **single game mode — Zen.** There is no mode selector; "Play" 
 
 ## 7. The core mechanic: color-coded behaviors
 
-Each sticky-note color maps to a physics behavior. The detected **bounding box + rotation angle** define the collider; the **color** defines how it behaves.
+Each sticky-note color maps to a physics behavior. The detected **bounding box + rotation angle** define the collider; the **color** defines how it behaves. **The color→behavior mapping is chosen by the player at calibration** (bring-your-own palette — see [§11.1](#111-first-time-setup-target--60s)), not hardcoded. The table below uses the *default suggested* colors.
 
-### MVP color set (2 behaviors)
+### MVP behaviors (2 roles)
 
-| Color | Behavior | Physics implementation | Player use |
+| Role (behavior) | Default color | Physics implementation | Player use |
 |---|---|---|---|
-| **Pink / Magenta** | **Bouncer / Ramp** | Static body, high restitution (~0.9). Reflection follows the note's surface angle. | The primary aiming tool. Tilt it to redirect balls toward the bucket. **Its angle is the aim.** |
-| **Blue** | **Dampener / Brake** | Static body, near-zero restitution (~0.05) + high surface friction. | Kills speed so a ball drops *into* the bucket instead of bouncing back out. Essential, not optional flavor. |
+| **Bouncer / Ramp** | Magenta (suggested) | Static body, high restitution (~0.9). Reflection follows the note's surface angle. | The primary aiming tool. Tilt it to redirect balls toward the bucket. **Its angle is the aim.** |
+| **Dampener / Brake** | Cyan-blue (suggested) | Static body, near-zero restitution (~0.05) + high surface friction. | Kills speed so a ball drops *into* the bucket instead of bouncing back out. Essential, not optional flavor. |
 
-**Both behaviors are load-bearing.** The bucket's inner walls carry slight restitution, so a ball arriving too fast bounces out. To reliably score you must **aim with pink** *and* **control speed with blue**. The satisfying core beat is the sequence "redirect it over the bucket, then brake it in." Depth in the MVP comes from angle precision + speed control + combining notes (two pinks form a longer bounce lane; pink-then-blue is aim-then-settle), not from adding more colors.
+Colors are **suggestions, not requirements** — a player who only owns yellow and green can assign yellow→Bouncer and green→Brake. The app auto-suggests the two best-separated colors from whatever the player has, and warns if the chosen pair is hard to tell apart (see [§13](#13-functional-requirements) FR-9a/9b/12).
+
+**Both behaviors are load-bearing.** The bucket's inner walls carry slight restitution, so a ball arriving too fast bounces out. To reliably score you must **aim with the Bouncer** *and* **control speed with the Brake**. The satisfying core beat is the sequence "redirect it over the bucket, then brake it in." Depth in the MVP comes from angle precision + speed control + combining notes (two Bouncers form a longer bounce lane; Bouncer-then-Brake is aim-then-settle), not from adding more colors. (With only one color assigned, the player has the Bouncer alone — playable but harder.)
 
 ### Expansion colors (post-MVP)
 
@@ -156,9 +158,13 @@ Zen mode has no escalating difficulty curve — it's a calm, self-paced sandbox.
 ### 11.1 First-time setup (target < 60s)
 1. Land on site → "Play" → browser camera permission prompt.
 2. **Define play area (corner-pin):** drag four corners over the wall region the game should use (reuses existing perspective-transform tool). Everything outside is ignored.
-3. **Color calibration:** for each color in the active set (pink, blue), "Hold up a [pink] note and tap it." The app samples the actual HSV under current lighting and sets the threshold. (Critical — lighting varies wildly; hardcoded thresholds fail.) Calibration warns if the two samples are too close in HSV to separate reliably.
-4. Short interactive tutorial: one ball, one pink note, "tilt it to drop the ball in the bucket," then introduce blue to "stop it bouncing back out."
-5. Play.
+3. **Pick your colors (bring-your-own palette):** rather than requiring a specific kit, ask *"Which sticky-note colors do you have?"* The player taps the colors they own from a palette of common sticky-note hues; each swatch shows a detection-reliability hint (bright magenta = great, pale yellow = tricky).
+4. **Assign roles:** Cascade needs two kinds of block — **Bouncer** (aim) and **Brake** (speed control). Each role gets a color picker populated from the colors chosen in step 3. The app auto-suggests the two best-separated colors, but the mapping is **fully editable** — the player decides which color is which block.
+   - **1-color play:** if the player only has one usable color, they may still play with the **Bouncer only** (aiming, no brake — harder to keep balls in, but never blocked). We recommend a second color but don't require it.
+   - **Extra colors:** colors beyond the two roles are ignored in v1 (only Bouncer + Brake exist); the UI may note "more block types coming soon."
+5. **Color calibration:** for each *assigned* color, "Hold up your [magenta] note and tap it." The app samples the actual HSV under current lighting and sets the threshold. (Critical — lighting varies wildly; hardcoded thresholds fail.) Calibration warns if the two assigned colors are too close in HSV to separate reliably, and lets the player swap a color without restarting.
+6. Short interactive tutorial: one ball, the Bouncer note, "tilt it to drop the ball in the bucket," then (if assigned) introduce the Brake to "stop it bouncing back out."
+7. Play.
 
 ### 11.2 Returning session
 - Remembers last calibration (localStorage). Offer "Re-calibrate" if detection looks off. A lightweight "lighting changed?" recheck on launch.
@@ -194,9 +200,11 @@ Zen mode has no escalating difficulty curve — it's a calm, self-paced sandbox.
 
 **Calibration**
 - FR-9 Interactive four-corner play-area definition.
-- FR-10 Per-color HSV sampling from a held-up note; persist to localStorage.
-- FR-11 Re-calibration available any time without restarting.
-- FR-12 Calibration warns/rejects if the two color samples overlap too much in HSV to be separated reliably.
+- FR-9a **Color selection:** present a palette of common sticky-note colors with reliability hints; the player selects which colors they physically have.
+- FR-9b **Role assignment:** map each behavior role (Bouncer, Brake) to one of the selected colors. Auto-suggest the two best-separated colors; allow the player to edit the mapping freely. Support **1-color play** (Bouncer only) and ignore colors beyond the two roles.
+- FR-10 Per-(assigned-)color HSV sampling from a held-up note; persist the full calibration profile (selected colors, role→color mapping, sampled HSV ranges) to localStorage.
+- FR-11 Re-calibration available any time without restarting, including changing color selection and re-assigning roles.
+- FR-12 Calibration warns/rejects if the two assigned color samples overlap too much in HSV to be separated reliably, and offers to swap a color.
 
 **Physics (Matter.js)**
 - FR-13 Generate a static body per detected note, sized/angled to the detection.
@@ -220,14 +228,17 @@ Zen mode has no escalating difficulty curve — it's a calm, self-paced sandbox.
 
 ## 14. Technical architecture
 
-**Stack:** plain JS or a light framework (the prototype is vanilla JS, which is fine), OpenCV.js for vision, Matter.js for physics, Canvas/WebGL for rendering, Web Audio/Tone.js for sound, localStorage for calibration persistence. No backend required for v1.
+**Stack:** vanilla JS (ES modules, built with Vite), a **dependency-free pure-JS computer-vision pipeline** for detection, Matter.js for physics, Canvas 2D for rendering, Web Audio/Tone.js for sound, localStorage for calibration persistence. No backend required for v1.
+
+> **Vision: pure JS, not OpenCV.js.** We originally planned OpenCV.js, but its ~11 MB WASM build initializes synchronously and froze the main thread (and blocked the camera prompt). Our detection needs are modest — HSV threshold, blob finding, orientation — so vision is now hand-written JS that runs in a few ms on a downscaled frame: zero dependency, no WASM, no freeze, and trivially movable into a Web Worker later if needed.
 
 **Pipeline (per frame):**
 ```
 webcam frame
-  → OpenCV.js: BGR→HSV
-  → per-color threshold (calibrated: pink, blue)
-  → findContours → boxes + angles + centroids
+  → pure-JS: RGB→HSV per pixel
+  → per-color threshold (calibrated colors) → binary mask
+  → connected-components (flood fill) → blobs
+  → image moments → centroid + orientation + size
   → perspective transform (corner-pin) → game coordinates
   → temporal smoothing / freeze (anti-jitter)
   → diff against tracked notes (moved? new? gone?  + occlusion-hold)
@@ -247,6 +258,8 @@ Render:
 **Recommended starter color kit.** With only two colors, separation is both easier and more important. Recommend **hot magenta/pink + strong cyan-blue** — maximally separated in HSV and robust under typical indoor lighting. Onboarding should nudge users toward **bright, saturated** notes; pastels wash out and overlap with skin/wall tones.
 
 **Performance budget (per frame, ~33 ms at 30 fps):** vision ≤ ~20 ms, physics + render ≤ ~10 ms. If over budget: downscale the processed frame (process at lower res than displayed), cap ball count, throttle detection to ~15–20 Hz while rendering physics at 60.
+
+**Visual foreground occlusion (planned, late-stage polish — NOT in early milestones).** Today the physics overlay is a single flat layer drawn *on top of* the webcam image, so anything between the camera and wall (a hand, a person) has balls sliding over it — which looks wrong, since balls should appear to move *on the wall* and pass *behind* real objects in front of it. The intended fix is **2D foreground segmentation**, not true depth: each frame, derive a foreground mask (person/hand segmentation, e.g. MediaPipe Selfie Segmentation, or background subtraction against the calibrated empty wall) and **render balls only where the mask says "wall,"** clipping them behind foreground objects. This is a render-time masking change plus one more per-frame model in the budget; it is deliberately scheduled at the **end** (polish), after the core loop and detection are solid. It is distinct from the gameplay occlusion-hold (FR-8a), which keeps a note's *collider* alive during brief occlusion — that is already required and unaffected.
 
 ---
 
@@ -324,10 +337,15 @@ A reasonable v1 "good enough to release": a person points their laptop at a wall
 5. **M4 – Zen feel:** "Well done!" celebration, occlusion-hold robustness, calm tuning.
 6. **M5 – Polish:** sound, tutorial, landing page, colorblind legend.
 7. **M6 – Release:** ship v1; gather feedback; then scoring/Arcade, Puzzle mode, and expansion colors.
+8. **M7 – Visual foreground occlusion (end-stage):** 2D foreground segmentation so balls render *behind* hands/people and appear to move on the wall (see [§14](#14-technical-architecture)). Deliberately last — it's a render-time polish layer, not core to the loop.
 
 ---
 
 ## Changelog
 
+- **v0.2.3 (19 Jun 2026)** — **Dropped OpenCV.js for a dependency-free pure-JS vision pipeline** (HSV threshold → connected-components → image-moment orientation). OpenCV's ~11 MB WASM init froze the main thread and blocked the camera prompt. Also: camera now starts only on a user gesture (Play), and a denied/blocked camera redirects to the landing page with a clear message. Game lives at its own route (#/play); Exit + browser Back return home and release the camera.
+
+- **v0.2.2 (19 Jun 2026)** — Added **visual foreground occlusion** as a planned end-stage polish (M7): balls should render behind real objects in front of the wall via 2D foreground segmentation (not true depth). Softened the §3 depth non-goal accordingly. Added the **landing page** (camera stays off until Play) and the **bring-your-own-palette corner-pin + detection** build (corner-pin play area, OpenCV HSV detection, proximity tracking with occlusion-hold, role-based note colliders).
+- **v0.2.1 (19 Jun 2026)** — **Bring-your-own palette:** calibration now asks which colors the player has and lets them assign each color to a behavior role (Bouncer/Brake), instead of requiring a fixed kit. Supports 1-color play (Bouncer only); ignores colors beyond the two roles. Reframed §7 around behavior *roles* with suggested (not required) colors; added FR-9a/9b and updated FR-10–12 and the onboarding flow (§11.1).
 - **v0.2 (19 Jun 2026)** — Reframed MVP from scored Arcade to no-pressure **Zen mode** (no score/clock/fail/leaderboard). Reduced MVP color set to **2 behaviors (pink + blue)**; deferred green attractor. Defined fixed-per-session random spawn spout, gentle ball stream, "Well done!" celebration, and bucket inner-wall restitution so both colors are load-bearing. Added occlusion-hold requirement (FR-8a). Recommended hot-magenta + cyan-blue color kit. Removed high-score persistence. Renumbered functional requirements; updated modes, scope, risks, metrics, open questions, and milestones accordingly.
 - **v0.1** — Initial draft: scored Arcade MVP with 3 behaviors (pink/blue/green).

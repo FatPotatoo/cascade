@@ -67,11 +67,36 @@ body {
   font-size: 13px;
 }
 
-.legend-pink {
-  color: var(--pink);
+.legend-item {
+  display: inline-flex;
+  align-items: center;
 }
-.legend-blue {
-  color: var(--blue);
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-right: 8px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.recal-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px 14px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.recal-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .panel {
@@ -98,4 +123,157 @@ body {
 
 .hidden {
   display: none !important;
+}
+
+/* --- Home / landing page ------------------------------------------------ */
+.home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(1200px 600px at 50% -10%, #1a2030 0%, var(--bg) 60%);
+  padding: 24px;
+}
+
+.home-inner {
+  width: min(560px, 92vw);
+  text-align: center;
+}
+
+.home-title {
+  margin: 0;
+  font-size: clamp(48px, 9vw, 84px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, var(--pink), var(--blue));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.home-tagline {
+  margin: 12px auto 0;
+  max-width: 440px;
+  color: var(--fg);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+/* Tiny decorative diagram of the game idea */
+.home-art {
+  position: relative;
+  height: 150px;
+  margin: 28px auto 8px;
+  max-width: 360px;
+}
+.home-ball {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: #ffd166;
+  box-shadow: 0 0 16px rgba(255, 209, 102, 0.7);
+  animation: home-drop 2.6s ease-in infinite;
+}
+.home-note {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.home-note-a {
+  background: var(--pink);
+  left: 70px;
+  top: 58px;
+  transform: rotate(-22deg);
+}
+.home-note-b {
+  background: var(--blue);
+  right: 78px;
+  top: 84px;
+  transform: rotate(16deg);
+}
+.home-bucket {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 70px;
+  height: 44px;
+  margin-left: -35px;
+  border: 4px solid var(--fg);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+}
+@keyframes home-drop {
+  0% { top: 6px; opacity: 0; }
+  15% { opacity: 1; }
+  100% { top: 110px; opacity: 1; }
+}
+
+.home-play {
+  margin-top: 20px;
+  padding: 16px 56px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #11141c;
+  background: #fff;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+}
+.home-play:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 36px rgba(255, 255, 255, 0.25);
+}
+
+.home-error {
+  margin: 16px auto 0;
+  max-width: 420px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 140, 107, 0.12);
+  border: 1px solid rgba(255, 140, 107, 0.4);
+  color: #ffb59e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.home-privacy {
+  margin: 22px auto 0;
+  max-width: 420px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.home-link {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.exit-btn {
+  position: absolute;
+  top: 16px;
+  right: 132px;
+  padding: 8px 14px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.exit-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }

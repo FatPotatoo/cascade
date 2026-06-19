@@ -37,12 +37,28 @@ export class PhysicsWorld {
     this.onCatch = null;
     this.onMiss = null;
 
-    // Fixed-per-session spout x (PRD §8).
-    const { marginX } = CONFIG.spout;
-    this.spoutX = marginX + rng() * (width - 2 * marginX);
     this.spoutY = CONFIG.spout.y;
-
     this._buildBucket();
+
+    // Fixed-per-session spout x (PRD §8). Place it OFF to one side of the
+    // bucket opening so a straight drop misses — the player must use notes to
+    // redirect the ball in (PRD §4 catch requires deliberate aiming).
+    this.spoutX = this._pickSpoutX(rng);
+  }
+
+  _pickSpoutX(rng) {
+    const { marginX, bucketClearance } = CONFIG.spout;
+    const r = this.bucketRect;
+    const leftSpan = [marginX, r.x - bucketClearance];
+    const rightSpan = [r.x + r.w + bucketClearance, this.width - marginX];
+    const valid = [leftSpan, rightSpan].filter(([a, b]) => b - a > 20);
+
+    if (valid.length === 0) {
+      // Degenerate (tiny play area): fall back to a corner away from center.
+      return rng() < 0.5 ? marginX : this.width - marginX;
+    }
+    const span = valid[Math.floor(rng() * valid.length)];
+    return span[0] + rng() * (span[1] - span[0]);
   }
 
   _buildBucket() {

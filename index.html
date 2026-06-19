@@ -5,25 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cascade</title>
     <!--
-      OpenCV.js is a large (~8 MB) WASM build, so we load it from the official
-      CDN as a classic script rather than bundling it. `src/vision/opencv.js`
-      waits for the `cv` global / its runtime-initialized callback.
-      Loaded `async` so it does not block first paint; the app shows a loading
-      state until vision is ready.
+      OpenCV.js is a large (~11 MB) WASM build whose runtime initialization runs
+      synchronously on the main thread and can freeze the page. We therefore do
+      NOT load it here at page load. Instead `src/vision/opencv.js` injects the
+      CDN script lazily, only AFTER the camera is up and the game loop is
+      running, so the camera prompt and feed are never blocked.
     -->
-    <script async src="https://docs.opencv.org/4.10.0/opencv.js"></script>
   </head>
   <body>
     <div id="app">
-      <canvas id="stage"></canvas>
+      <!-- Landing page. The camera is NOT touched until the player hits Play,
+           so the webcam light stays off while browsing the site. -->
+      <section id="home" class="home">
+        <div class="home-inner">
+          <h1 class="home-title">Cascade</h1>
+          <p class="home-tagline">
+            Guide falling balls into a bucket by arranging real sticky notes on
+            your wall — seen through your webcam.
+          </p>
+          <div class="home-art" aria-hidden="true">
+            <span class="home-ball"></span>
+            <span class="home-note home-note-a"></span>
+            <span class="home-note home-note-b"></span>
+            <span class="home-bucket"></span>
+          </div>
+          <button id="play-btn" class="home-play">Play</button>
+          <p id="home-error" class="home-error hidden">
+            Camera access was blocked. Cascade needs your webcam to play —
+            allow it in your browser, then press Play again.
+          </p>
+          <p class="home-privacy">
+            🔒 Your camera turns on only when you press Play, and everything is
+            processed on your device — no video ever leaves your browser.
+          </p>
+          <a class="home-link" href="#" target="_blank" rel="noopener">About &amp; source</a>
+        </div>
+      </section>
 
-      <div id="overlay-ui">
+      <canvas id="stage" class="hidden"></canvas>
+
+      <div id="overlay-ui" class="hidden">
         <div id="status" class="status">Starting…</div>
 
-        <div id="legend" class="legend hidden">
-          <span class="legend-item legend-pink">◣ Pink — bounce / aim</span>
-          <span class="legend-item legend-blue">▦ Blue — brake</span>
-        </div>
+        <!-- Legend is rebuilt from the player's calibrated color→role mapping. -->
+        <div id="legend" class="legend hidden"></div>
+
+        <button id="recalibrate" class="recal-btn hidden">Re-calibrate</button>
+        <button id="exit-btn" class="exit-btn hidden">✕ Exit</button>
 
         <div id="camera-error" class="panel hidden">
           <h2>Camera needed</h2>
